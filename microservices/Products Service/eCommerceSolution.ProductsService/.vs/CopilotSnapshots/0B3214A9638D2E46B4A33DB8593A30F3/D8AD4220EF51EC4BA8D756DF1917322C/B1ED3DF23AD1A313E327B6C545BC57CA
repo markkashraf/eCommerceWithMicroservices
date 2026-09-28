@@ -1,0 +1,72 @@
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using eCommecre.Infrastructre.Repository_Interfaces;
+using eCommerce.Core.Entities;
+
+namespace eCommerce.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductsController : ControllerBase
+    {
+        private readonly IProductsRepository _productsRepository;
+
+        public ProductsController(IProductsRepository productsRepository)
+        {
+            _productsRepository = productsRepository;
+        }
+
+        // GET: api/Products
+        [HttpGet]
+        public ActionResult<IEnumerable<Product>> Get()
+        {
+            var products = _productsRepository.GetProducts();
+            return Ok(products);
+        }
+
+        // GET: api/Products/{id}
+        [HttpGet("{id}")]
+        public ActionResult<Product> Get(Guid id)
+        {
+            var product = _productsRepository.GetProductByCondition(p => p.ProductID == id);
+            if (product == null) return NotFound();
+            return Ok(product);
+        }
+
+        // POST: api/Products
+        [HttpPost]
+        public ActionResult<Product> Post([FromBody] Product product)
+        {
+            if (product == null) return BadRequest();
+            if (product.ProductID == Guid.Empty) product.ProductID = Guid.NewGuid();
+
+            _productsRepository.AddProduct(product);
+
+            return CreatedAtAction(nameof(Get), new { id = product.ProductID }, product);
+        }
+
+        // PUT: api/Products/{id}
+        [HttpPut("{id}")]
+        public IActionResult Put(Guid id, [FromBody] Product product)
+        {
+            if (product == null || id != product.ProductID) return BadRequest();
+
+            var existing = _productsRepository.GetProductByCondition(p => p.ProductID == id);
+            if (existing == null) return NotFound();
+
+            _productsRepository.UpdateProduct(product);
+            return NoContent();
+        }
+
+        // DELETE: api/Products/{id}
+        [HttpDelete("{id}")]
+        public IActionResult Delete(Guid id)
+        {
+            var existing = _productsRepository.GetProductByCondition(p => p.ProductID == id);
+            if (existing == null) return NotFound();
+
+            _productsRepository.DeleteProduct(id);
+            return NoContent();
+        }
+    }
+}
